@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.Jwt.AuthToken.entities.User;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -23,6 +25,9 @@ public class JwtService {
     @Value("${security.jwt.expiration-time}")
     private Long jwtExpiration;
 
+    @Value("${security.jwt.token-time}")
+    private Long tokenExpiration;
+    
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -32,11 +37,29 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(User userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
+    
+	public String generateRefreshToken(User userDetails) {
+		return generateRefreshToken(new HashMap<>(), userDetails);
+		
+	}
+    private String generateRefreshToken(Map<String, Object> extraClaims, User userDetails) {
+		return buildRefreshToken(extraClaims, userDetails, tokenExpiration);
+	}
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+	private String buildRefreshToken(Map<String, Object> extraClaims, User userDetails, Long tokenExpiration) {
+		return Jwts.builder()
+                .setSubject(userDetails.getUsername())
+                .claim("role", userDetails.getRole())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+				.setExpiration(new Date(System.currentTimeMillis() + tokenExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+	}
+
+	public String generateToken(Map<String, Object> extraClaims, User userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
@@ -44,15 +67,11 @@ public class JwtService {
         return jwtExpiration;
     }
 
-    private String buildToken(
-            Map<String, Object> extraClaims,
-            UserDetails userDetails,
-            Long expiration
-    ) {
-        return Jwts
-                .builder()
-                .setClaims(extraClaims)
+    private String buildToken(Map<String, Object> extraClaims,User userDetails,Long expiration) {
+    	
+        return Jwts.builder()
                 .setSubject(userDetails.getUsername())
+                .claim("role", userDetails.getRole())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
@@ -85,4 +104,5 @@ public class JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
 }

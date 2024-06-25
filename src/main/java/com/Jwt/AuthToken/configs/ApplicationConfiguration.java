@@ -1,5 +1,6 @@
 package com.Jwt.AuthToken.configs;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,11 +15,8 @@ import com.Jwt.AuthToken.repositories.UserRepository;
 
 @Configuration
 public class ApplicationConfiguration {
-    private final UserRepository userRepository;
-
-    public ApplicationConfiguration(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+	@Autowired
+    private UserRepository userRepository;
 
     @Bean
     UserDetailsService userDetailsService() {
@@ -32,7 +30,7 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 

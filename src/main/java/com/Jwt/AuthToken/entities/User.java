@@ -9,6 +9,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.Jwt.AuthToken.enums.Role;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -43,6 +45,9 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String password;
+    
+    @Column(nullable = false)
+    private Role role;
 
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
@@ -52,6 +57,10 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private Date updatedAt;
 
+    public User(String email) {
+    	 this.email=email;
+    }
+    
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();

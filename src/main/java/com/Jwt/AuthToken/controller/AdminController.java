@@ -8,14 +8,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.Jwt.AuthToken.services.UserService;
 
-
-@RequestMapping("/api/user")
+@RequestMapping("/api/admin")
 @RestController
-public class UserController {
+public class AdminController {
 	@Autowired
     private UserService userService;
 
-    public UserController(UserService userService) {
+    public AdminController(UserService userService) {
         this.userService = userService;
     }
 
@@ -25,7 +24,7 @@ public class UserController {
 //
 //        User currentUser = (User) authentication.getPrincipal();
 
-        return ResponseEntity.ok("User Login");
+        return ResponseEntity.ok("Admin login success");
     }
     
 
