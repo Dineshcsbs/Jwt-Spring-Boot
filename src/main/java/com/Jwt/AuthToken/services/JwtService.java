@@ -17,6 +17,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+
 @Service
 public class JwtService {
     @Value("${security.jwt.secret-key}")
@@ -27,7 +28,7 @@ public class JwtService {
 
     @Value("${security.jwt.token-time}")
     private Long tokenExpiration;
-    
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -37,29 +38,37 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(User userDetails) {
+    public String extractRole(String token) {
+        Claims claims = extractAllClaims(token);
+        Map<String, Object> role = (Map<String, Object>) claims.get("role");
+        return (String) role.get("role_type");
+    }
+
+    public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
-    
-	public String generateRefreshToken(User userDetails) {
-		return generateRefreshToken(new HashMap<>(), userDetails);
-		
-	}
-    private String generateRefreshToken(Map<String, Object> extraClaims, User userDetails) {
-		return buildRefreshToken(extraClaims, userDetails, tokenExpiration);
-	}
 
-	private String buildRefreshToken(Map<String, Object> extraClaims, User userDetails, Long tokenExpiration) {
-		return Jwts.builder()
+    public String generateRefreshToken(UserDetails userDetails) {
+        return generateRefreshToken(new HashMap<>(), userDetails);
+    }
+
+    private String generateRefreshToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        return buildRefreshToken(extraClaims, userDetails, tokenExpiration);
+    }
+
+    private String buildRefreshToken(Map<String, Object> extraClaims, UserDetails userDetails, Long tokenExpiration) {
+        User user = (User) userDetails;
+        return Jwts.builder()
+                .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
-                .claim("role", userDetails.getRole())
+                .claim("role", user.getRole())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-				.setExpiration(new Date(System.currentTimeMillis() + tokenExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + tokenExpiration * 1000))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
-	}
+    }
 
-	public String generateToken(Map<String, Object> extraClaims, User userDetails) {
+    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
@@ -67,13 +76,14 @@ public class JwtService {
         return jwtExpiration;
     }
 
-    private String buildToken(Map<String, Object> extraClaims,User userDetails,Long expiration) {
-    	
+    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, Long expiration) {
+        User user = (User) userDetails;
         return Jwts.builder()
+                .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
-                .claim("role", userDetails.getRole())
+                .claim("role", user.getRole())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -104,5 +114,4 @@ public class JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
-
 }
